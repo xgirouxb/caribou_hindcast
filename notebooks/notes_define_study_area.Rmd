@@ -1,0 +1,141 @@
+---
+title: "Defining the caribou habitat quality model hindcast study area"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: yes
+    highlight: zenburn
+    theme: sandstone
+    toc: yes
+---
+
+```{r, setup, include=FALSE, purl=FALSE}
+# # Set notebook working directory to parent directory
+# knitr::opts_knit$set(root.dir = normalizePath(".."))
+
+# Set code chunk options
+knitr::opts_chunk$set(
+  # Suppress warnings/messages
+  warning = FALSE, 
+  message = FALSE,
+  # Center plots
+  fig.align = 'center',
+  fig.width = 8.5
+)
+
+# Import study_area target for targets workflow dependency
+targets::tar_read(study_area)
+```
+
+
+# 1. Import and visualize boreal woodland caribou range shapefiles
+```{r}
+# Read in Quebec ranges
+quebec_ranges <- sf::read_sf(dsn = 'data/study_area/quebec_caribou_ranges.shp')
+
+# Read in Ontario ranges
+ontario_ranges <- sf::read_sf(dsn = 'data/study_area/ontario_caribou_ranges.shp')
+
+# ggplot object
+caribou_ranges <- ggplot2::ggplot() +
+  ggplot2::geom_sf(
+    data = quebec_ranges,
+    mapping = ggplot2::aes(fill = NOM_POP),
+    alpha = 0.5
+  ) +
+  ggplot2::geom_sf(
+    data = ontario_ranges,
+    mapping = ggplot2::aes(fill = RANGE_NAME),
+    alpha = 0.5
+  ) +
+  theme_caribou +
+  ggplot2::labs(fill = "Herd ranges") +
+  NULL
+
+# Plotly interactive pbject
+plotly::ggplotly(caribou_ranges) 
+```
+
+# 2. Make a hull of all caribou ranges
+```{r}
+# Combine QC and ON polygons into single concave hull
+caribou_hull <- dplyr::bind_rows(quebec_ranges, ontario_ranges) %>% 
+  # Union
+  sf::st_union() %>%
+  # Relaxed concave hull
+  sf::st_concave_hull(ratio = 0.4) %>%
+  # Testing
+  # dplyr::glimpse() %>% 
+  {.}
+
+# Make ggplot map object
+caribou_hull_map <- ggplot2::ggplot() +
+  ggplot2::geom_sf(data = caribou_hull) +
+  ggplot2::geom_sf(
+    data = quebec_ranges,
+    mapping = ggplot2::aes(fill = NOM_POP),
+    alpha = 0.5
+  ) +
+  ggplot2::geom_sf(
+    data = ontario_ranges,
+    mapping = ggplot2::aes(fill = RANGE_NAME),
+    alpha = 0.5
+  ) +
+  theme_caribou +
+  ggplot2::labs(fill = "Herd range") +
+  NULL
+
+# Add map
+plotly::ggplotly(caribou_hull_map)
+```
+
+# 3. Get Ontario and Quebec administrative boundaries
+```{r}
+# Get Canadian province polygons
+qc_on_poly <- sf::read_sf(
+  dsn = "data/study_area/statcan_admin_bounds.shp"
+) %>%
+  # Filter Quebec and Ontario
+  dplyr::filter(PRUID %in% c(24, 35)) %>% 
+  # Cast MULTIPOLYGON to POLYGON
+  sf::st_cast("POLYGON", warn = FALSE) %>%
+  # Filter polygons that intersect the caribou range hull
+  sf::st_filter(caribou_hull) %>%
+  # Fix topology errors
+  sf::st_make_valid() %>%
+  # Combine into single layer
+  sf::st_union()  %>%
+  # Testing
+  # glimpse() %>%
+  {.}
+
+# Make ggplot object
+qc_on_poly_plot <- ggplot2::ggplot() +
+  ggplot2::geom_sf(data = qc_on_poly) +
+  ggplot2::geom_sf(data = caribou_hull, fill = "forestgreen", alpha = 0.5) +
+  theme_caribou +
+  ggplot2::theme(legend.position = "none") +
+  NULL
+
+# Add map
+plotly::ggplotly(qc_on_poly_plot)
+```
+
+# 4. Study area as intersection of hull and provincial boundaries
+```{r}
+# Caribou ranges clipped with both provinces
+study_area <- caribou_hull %>% 
+  sf::st_intersection(qc_on_poly)
+
+# Create ggplot object
+caribou_hull_clipped_plot <- ggplot2::ggplot() +
+  ggplot2::geom_sf(data = qc_on_poly) +
+  ggplot2::geom_sf(
+    data = study_area,
+    colour = "red", fill = "forestgreen", alpha = 0.5
+  ) +
+  NULL
+
+# Add map
+plotly::ggplotly(caribou_hull_clipped_plot)
+```

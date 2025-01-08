@@ -19,11 +19,10 @@ tar_option_set(
   format = "rds",
 )
 
-# Run the R scripts in the R/ folder with your custom functions:
+# Run all the R scripts in the R/ folder
 tar_source()
-# tar_source("other_functions.R") # Source other scripts as needed.
 
-# Replace the target list below with your own:
+# Target list
 list(
   # Define study area
   tar_target(
@@ -31,5 +30,10 @@ list(
     command = define_study_area(),
     format = "rds",
     repository = "local"
+  ),
+  # Knit notebook showing details of study area creation
+  tar_render(
+    name = notebook_study_area,
+    path = "notebooks/notes_define_study_area.Rmd"
   )
 )
