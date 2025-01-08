@@ -3,5 +3,6 @@
 .RData
 .Ruserdata
 .Rprofile
+_targets/
 data/
 outputs/
