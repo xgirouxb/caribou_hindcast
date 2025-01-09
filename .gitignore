@@ -9,6 +9,7 @@
 data/
 outputs/
 notebooks/*.html
+notebooks/*.md
 
 # Add {renv} .gitignore to project root directory
 renv/library/
