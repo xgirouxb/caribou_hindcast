@@ -1,8 +1,23 @@
+# Ignore R project files
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 .Rprofile
-_targets/
+
+# Ignore data inputs and ouputs, and html notebooks (saves space)
 data/
 outputs/
+notebooks/*.html
+
+# Add {renv} .gitignore to project root directory
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# Add {targets} .gitignore to project root directory
+_targets/
