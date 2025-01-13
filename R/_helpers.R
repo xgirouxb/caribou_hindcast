@@ -1,7 +1,7 @@
 # Function to download compressed vector layer datasets from URLs
 get_shp_from_url <- function(layer_url, aoi = NULL, shp_glob = "*.shp", file = NULL){
   
-  # Temp folder
+  # Temp folders
   temp <- tempfile(); temp_unzipped <- tempfile()
   
   # Download zipped shapefile from URL
