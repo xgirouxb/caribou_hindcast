@@ -40,5 +40,10 @@ list(
   tar_target(
     name = building_footprint,
     command = get_building_footprint(study_area)
+  ),
+  # Import, project, and filter AQRéseau+ roads to study area
+  tar_target(
+    name = aqrp_roads,
+    command = get_quebec_aqrp_roads(study_area)
   )
 )
