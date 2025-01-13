@@ -5,6 +5,8 @@ statcan_admin_boundaries_url <- "https://www12.statcan.gc.ca/census-recensement/
 quebec_aqrp_roads_url <- "https://diffusion.mern.gouv.qc.ca/Diffusion/RGQ/Vectoriel/Carte_Topo/Local/AQReseauPlus/ESRI(SHP)/AQreseauPlus_SHP.zip"
 ontario_mnr_roads_url <- "https://www.gisapplication.lrc.gov.on.ca/fmedatadownload/Packages/MNRRDSEG.zip"
 ontario_orn_roads_url <- "https://www.gisapplication.lrc.gov.on.ca/fmedatadownload/Packages/ORNELEM.zip"
+global_buildings_datalinks_url <- "https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv"
+
 
 # Projection parameters: epsg.io/3979
 study_proj <- 3979

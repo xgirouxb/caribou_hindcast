@@ -7,11 +7,11 @@ tar_option_set(
   # Packages that your targets need for their tasks.
   packages = c(
     # File/folder control tools
-    "fs", "readr",
+    "fs", "readr", "janitor",
     # Data manipulation tools
-    "dplyr", "magrittr", "tibble",
+    "dplyr", "tidyr", "magrittr", "tibble", "purrr", "furrr",
     # Spatial data tools
-    "sf",
+    "sf", "lwgeom", "quadkeyr", "geojsonsf",
     # Data visualization and notebook tools
     "ggplot2", "plotly", "rmarkdown"
   ),
@@ -35,5 +35,10 @@ list(
   tar_render(
     name = notebook_study_area,
     path = "notebooks/notes_define_study_area.Rmd"
+  ),
+  # Import Microsoft global building footprint with 2km buffer for study area
+  tar_target(
+    name = building_footprint,
+    command = get_building_footprint(study_area)
   )
 )
