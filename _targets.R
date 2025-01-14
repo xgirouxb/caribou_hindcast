@@ -45,5 +45,10 @@ list(
   tar_target(
     name = aqrp_roads,
     command = get_quebec_aqrp_roads(study_area)
+  ),
+  # Import, project, and filter ORN element roads to study area
+  tar_target(
+    name = orn_roads,
+    command = get_ontario_orn_roads(study_area)
   )
 )
