@@ -43,3 +43,21 @@ get_ontario_orn_roads <- function(study_area){
   # Return
   return(orn_roads)
 }
+
+# Function to import Ministry of Natural Resources roads dataset
+get_ontario_mnr_roads <- function(study_area){
+  
+  # Import MNR dataset
+  mnr_roads <- get_shp_from_url(
+    layer_url = ontario_mnr_roads_url,
+    # Limit to study area
+    aoi = study_area,
+    # Only read the ".shp" file
+    shp_glob = "*.shp"
+  ) %>% 
+    # Clean names
+    janitor::clean_names()
+  
+  # Return
+  return(mnr_roads)
+}

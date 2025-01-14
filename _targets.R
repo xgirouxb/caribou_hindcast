@@ -27,9 +27,7 @@ list(
   # Define study area
   tar_target(
     name = study_area,
-    command = define_study_area(),
-    format = "rds",
-    repository = "local"
+    command = define_study_area()
   ),
   # Knit notebook showing details of study area creation
   tar_render(
@@ -50,5 +48,10 @@ list(
   tar_target(
     name = orn_roads,
     command = get_ontario_orn_roads(study_area)
+  ),
+  # Import, project, and filter MNR element roads to study area
+  tar_target(
+    name = mnr_roads,
+    command = get_ontario_mnr_roads(study_area)
   )
 )
