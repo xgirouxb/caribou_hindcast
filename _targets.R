@@ -53,5 +53,21 @@ list(
   tar_target(
     name = mnr_roads,
     command = get_ontario_mnr_roads(study_area)
+  ),
+  # Preprocess Quebec roads
+  tar_target(
+    name = quebec_roads,
+    command = preprocess_quebec_roads(aqrp_roads),
+    # # If future is controlled by targets instead of furrr
+    # # Still need to figure this out
+    # resources = tar_resources(
+    #   future = tar_resources_future(
+    #     plan = future::tweak(
+    #       strategy = "future::multisession",
+    #       # Don't use all available cores
+    #       workers = round(parallelly::availableCores()*0.7)
+    #     )
+    #   )
+    # )
   )
 )
