@@ -10,9 +10,6 @@ output:
 ---
 
 ```{r, setup, include=FALSE, purl=FALSE}
-# # Set notebook working directory to parent directory
-# knitr::opts_knit$set(root.dir = normalizePath(".."))
-
 # Set code chunk options
 knitr::opts_chunk$set(
   # Suppress warnings/messages
@@ -22,11 +19,12 @@ knitr::opts_chunk$set(
   fig.align = 'center',
   fig.width = 8.5
 )
-
-# Import study_area target for targets workflow dependency
-targets::tar_read(study_area)
 ```
 
+# 0. Define targets workflow dependency
+```{r}
+targets::tar_load(study_area)
+```
 
 # 1. Import and visualize boreal woodland caribou range shapefiles
 ```{r}
