@@ -9,11 +9,11 @@ tar_option_set(
     # File/folder control tools
     "fs", "readr", "janitor",
     # Data manipulation tools
-    "dplyr", "tidyr", "magrittr", "tibble", "purrr", "furrr",
+    "dplyr", "tidyr", "magrittr", "tibble", "purrr", "furrr", "forcats",
     # Spatial data tools
     "sf", "lwgeom", "quadkeyr", "geojsonsf",
-    # Data visualization and notebook tools
-    "ggplot2", "plotly", "rmarkdown"
+    # Data visualization tools
+    "ggplot2", "plotly",
   ),
   # Default data format
   format = "rds",
@@ -54,7 +54,7 @@ list(
     name = mnr_roads,
     command = get_ontario_mnr_roads(study_area)
   ),
-  # Preprocess Quebec roads
+  # Preprocess Québec roads
   tar_target(
     name = quebec_roads,
     command = preprocess_quebec_roads(
@@ -62,5 +62,10 @@ list(
       building_footprint,
       n_workers = round(parallelly::availableCores()*0.5)
     )
+  ),
+  # Knit notebook illustrating preprocessing steps for Québec roads
+  tar_render(
+    name = notebook_preprocess_quebec_roads,
+    path = "notebooks/notes_preprocess_quebec_roads.Rmd"
   )
 )
