@@ -59,6 +59,7 @@ list(
     name = quebec_roads,
     command = preprocess_quebec_roads(
       aqrp_roads,
+      building_footprint,
       n_workers = round(parallelly::availableCores()*0.5)
     )
   )
