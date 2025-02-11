@@ -2,22 +2,22 @@
 define_study_area <- function(){
   
   # Import Quebec boreal caribou ranges
-  quebec_ranges <- get_shp_from_url(
-    layer_url = quebec_caribou_ranges_url,
+  quebec_ranges <- get_sf_from_source(
+    sf_source = quebec_caribou_ranges_url,
     # Save for later
     file = "data/study_area/quebec_caribou_ranges.shp"
   )
   
   # Import Ontario boreal caribou ranges
-  ontario_ranges <- get_shp_from_url(
-    layer_url = ontario_caribou_ranges_url,
+  ontario_ranges <- get_sf_from_source(
+    sf_source = ontario_caribou_ranges_url,
     # Save for later
     file = "data/study_area/ontario_caribou_ranges.shp"
   )
   
   # Import StatCan admin boundaries for Ontario and Quebec
-  statcan_admin_bounds <- get_shp_from_url(
-    layer_url = statcan_admin_boundaries_url,
+  statcan_admin_bounds <- get_sf_from_source(
+    sf_source = statcan_admin_boundaries_url,
     # Save for later
     file = "data/study_area/statcan_admin_bounds.shp"
   )
@@ -45,12 +45,6 @@ define_study_area <- function(){
   # Define study area as intersection of caribou range hull and ON/QC bounds
   study_area <- caribou_hull %>% 
     sf::st_intersection(qc_on_poly)
-  
-  # Write to file
-  sf::write_sf(
-    obj = study_area,
-    dsn = "data/study_area/study_area.shp"
-  )
   
   # Return
   return(study_area)
