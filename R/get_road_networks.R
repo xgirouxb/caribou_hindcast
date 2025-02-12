@@ -8,9 +8,7 @@ get_quebec_aqrp_roads <- function(study_area){
     sf_aoi = study_area,
     # Only read the "Reseau_routier.shp"
     sf_glob = "*routier.shp"
-  ) %>% 
-    # Clean names
-    janitor::clean_names()
+  )
   
   # Return
   return(aqrp_roads)
@@ -29,13 +27,10 @@ get_ontario_orn_roads <- function(study_area){
     delimiter = ";"
   ) %>%
     # Retain required columns
-    dplyr::select(
-      ogf_id = ORN_ROAD_NET_ELEMENT_ID,
-      surface = PAVEMENT_STATUS
-    ) %>% 
+    dplyr::select(ORN_ROAD_NET_ELEMENT_ID, PAVEMENT_STATUS) %>% 
     # Remove dupes: if a road has > 1 surface, choose "Paved")
-    dplyr::arrange(ogf_id, surface) %>% 
-    dplyr::distinct(ogf_id, .keep_all = TRUE)
+    dplyr::arrange(ORN_ROAD_NET_ELEMENT_ID, PAVEMENT_STATUS) %>% 
+    dplyr::distinct(ORN_ROAD_NET_ELEMENT_ID, .keep_all = TRUE)
   
   # Import ORN road class table (Paved/Non-paved)
   orn_roads_class_tbl <- get_tbl_from_source(
@@ -44,14 +39,11 @@ get_ontario_orn_roads <- function(study_area){
     delimiter = ";"
   ) %>%
     # Only retain required columns
-    dplyr::select(
-      ogf_id = ORN_ROAD_NET_ELEMENT_ID,
-      road_class = ROAD_CLASS
-    ) %>% 
+    dplyr::select(ORN_ROAD_NET_ELEMENT_ID, ROAD_CLASS) %>% 
     # Remove dupes: if a road has > 1 class, choose class based on NRN hierarchy
     dplyr::mutate(
-      road_class = factor(
-        road_class,
+      ROAD_CLASS = factor(
+        ROAD_CLASS,
         # NRN hierarchy: see metadata NRN lookup table in ORN_ROAD_CLASS_LIST 
         levels = c(
           "Freeway",
@@ -70,8 +62,8 @@ get_ontario_orn_roads <- function(study_area){
         )
       )
     ) %>% 
-    dplyr::arrange(ogf_id, road_class) %>% 
-    dplyr::distinct(ogf_id, .keep_all = TRUE)
+    dplyr::arrange(ORN_ROAD_NET_ELEMENT_ID, ROAD_CLASS) %>% 
+    dplyr::distinct(ORN_ROAD_NET_ELEMENT_ID, .keep_all = TRUE)
     
   # Import ORN dataset
   orn_roads <- get_sf_from_source(
@@ -81,11 +73,15 @@ get_ontario_orn_roads <- function(study_area){
     # Only read the ".shp" file
     sf_glob = "*.shp"
   ) %>% 
-    # Clean names
-    janitor::clean_names() %>% 
     # Join roads surface and class table by ogf_id
-    dplyr::left_join(orn_roads_surface_tbl, by = dplyr::join_by(ogf_id)) %>% 
-    dplyr::left_join(orn_roads_class_tbl, by = dplyr::join_by(ogf_id))
+    dplyr::left_join(
+      y = orn_roads_surface_tbl,
+      by = dplyr::join_by(OGF_ID == ORN_ROAD_NET_ELEMENT_ID)
+    ) %>% 
+    dplyr::left_join(
+      y = orn_roads_class_tbl,
+      by = dplyr::join_by(OGF_ID == ORN_ROAD_NET_ELEMENT_ID)
+    )
   
   # Return
   return(orn_roads)
@@ -101,9 +97,7 @@ get_ontario_mnr_roads <- function(study_area){
     sf_aoi = study_area,
     # Only read the ".shp" file
     sf_glob = "*.shp"
-  ) %>%
-    # Clean names
-    janitor::clean_names()
+  )
   
   # Return
   return(mnr_roads)
