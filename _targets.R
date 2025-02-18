@@ -13,10 +13,12 @@ tar_option_set(
     # Spatial data tools
     "sf", "lwgeom", "quadkeyr", "geojsonsf",
     # Data visualization tools
-    "ggplot2", "plotly",
+    "ggplot2", "plotly"
   ),
   # Default data format
   format = "rds",
+  # Run garbage collection before launching a target
+  garbage_collection = TRUE
 )
 
 # Run all the R scripts in the R/ folder
@@ -67,5 +69,14 @@ list(
   tar_render(
     name = notebook_preprocess_quebec_roads,
     path = "notebooks/notes_preprocess_quebec_roads.Rmd"
+  ),
+  # Preprocess Ontario roads
+  tar_target(
+    name = ontario_roads,
+    command = preprocess_ontario_roads(
+      orn_roads,
+      mnr_roads,
+      n_workers = round(parallelly::availableCores()*0.5)
+    )
   )
 )
