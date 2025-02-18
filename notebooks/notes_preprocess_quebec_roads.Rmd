@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
   message = FALSE,
   # Center plots
   fig.align = 'center',
-  fig.width = 8.5
+  fig.width = 9.5
 )
 
 # Hide this workflow dependency for greater simplicity
@@ -30,7 +30,6 @@ targets::tar_load(aqrp_roads)
 targets::tar_load(building_footprint)
 targets::tar_load(quebec_roads)
 ```
-
 
 # 1. Visualize Québec's AQRP road network dataset
 
@@ -76,7 +75,7 @@ In the AQRP dataset, the `Etat_Rev` attribute describes the surface of the road.
 ```{r warning=FALSE}
 ggplot2::ggplot(data = aqrp_roads) +
   ggplot2::geom_histogram(
-    mapping = ggplot2::aes(x = etat_rev),
+    mapping = ggplot2::aes(x = EtatRev),
     stat = "count"
   ) +
   ggplot2::labs(
@@ -86,15 +85,15 @@ ggplot2::ggplot(data = aqrp_roads) +
   theme_caribou
 ```
 
-We will first recategorize `Etat_Rev` into `paved` and `unpaved` under the new attribute `surface`. While the majority of all roads in the study area are `Non revêtue` (unpaved), note the presence of `Autre` (other), `ND` (non-determined), and `NA`s which we will include as `unknown` for now. We will later reclassify `unknown`s into `paved` and `unpaved` using various criteria.
+We will first recategorize `EtatRev` into `paved` and `unpaved` under the new attribute `surface`. While the majority of all roads in the study area are `Non revêtue` (unpaved), note the presence of `Autre` (other), `ND` (non-determined), and `NA`s which we will include as `unknown` for now. We will later reclassify `unknown`s into `paved` and `unpaved` using various criteria.
 ```{r warning=FALSE}
 aqrp_roads <- aqrp_roads %>% 
   dplyr::mutate(
     surface = dplyr::case_when(
-      etat_rev == "Non revêtue" ~ "unpaved",
-      etat_rev == "Revêtue" ~ "paved",
+      EtatRev == "Non revêtue" ~ "unpaved",
+      EtatRev == "Revêtue" ~ "paved",
       # NA as unknown
-      is.na(etat_rev) ~ "unknown",
+      is.na(EtatRev) ~ "unknown",
       # Autre and ND as unknown
       TRUE ~ "unknown"
     )
@@ -107,7 +106,7 @@ In the AQRP dataset, the `Cls_CheFor` attribute describes road classifications f
 ```{r warning=FALSE}
 ggplot2::ggplot(data = aqrp_roads) +
   ggplot2::geom_histogram(
-    mapping = ggplot2::aes(x = cls_che_for),
+    mapping = ggplot2::aes(x = Cls_CheFor),
     stat = "count"
   ) +
   ggplot2::labs(
@@ -121,7 +120,7 @@ Note the presence of `NA`s which will toss into the `IN` (Inconnu, unknown) plac
 ```{r}
 aqrp_roads <- aqrp_roads %>% 
   # Replace NAs prior to filtering to avoid dropping
-  tidyr::replace_na(list(cls_che_for = "IN"))
+  tidyr::replace_na(list(Cls_CheFor = "IN"))
 ```
 
 Let's inspect the proportion of the total length of each of these categories that are `unpaved`, `paved`, or `unknown`.
@@ -131,10 +130,10 @@ cls_che_for_proportions <- aqrp_roads %>%
   dplyr::mutate(length = sf::st_length(geometry)) %>%
   sf::st_drop_geometry() %>% 
   # Group by Cls_CheFor and compute total length of road in each class
-  dplyr::group_by(cls_che_for) %>% 
+  dplyr::group_by(Cls_CheFor) %>% 
   dplyr::mutate(cls_che_for_length_total = sum(length)) %>% 
   # Summarize total length for each surface type within each road class
-  dplyr::group_by(cls_che_for, surface) %>% 
+  dplyr::group_by(Cls_CheFor, surface) %>% 
   dplyr::summarise(total_length_surface = sum(length)) %>%
   # Compute total length of each class, then proportion of surfaces in-class
   dplyr::mutate(
@@ -145,7 +144,7 @@ cls_che_for_proportions <- aqrp_roads %>%
   dplyr::ungroup()
 
 # Visualize proportions of paved/unpaved/unknown surface in each road class
-ggplot2::ggplot(cls_che_for_proportions, ggplot2::aes(cls_che_for, proportion)) +
+ggplot2::ggplot(cls_che_for_proportions, ggplot2::aes(Cls_CheFor, proportion)) +
   ggplot2::geom_bar(
     mapping = ggplot2::aes(fill = surface),
     position = "stack", stat = "identity"
@@ -165,11 +164,11 @@ Note that for all classes except `NF`, roads are overwhelmingly `unpaved`. The `
 
 ## 2.3 Road classification attribute
 
-In the AQRP dataset, the `Cls_Rte` attribute describes the broader road classification.
+In the AQRP dataset, the `ClsRte` attribute describes the broader road classification.
 ```{r fig.height=6, warning=FALSE}
 ggplot2::ggplot(data = aqrp_roads) +
   ggplot2::geom_histogram(
-    mapping = ggplot2::aes(x = cls_rte),
+    mapping = ggplot2::aes(x = ClsRte),
     stat = "count"
   ) +
   ggplot2::labs(x = "Road classification", y = "Count") +
@@ -184,9 +183,9 @@ Note the large number of `NA`s which will need to be replaced with the `IN` (Inc
 ```{r}
 aqrp_roads <- aqrp_roads %>% 
   # Replace NAs prior to filtering to avoid dropping
-  tidyr::replace_na(list(cls_rte = "IN")) %>% 
+  tidyr::replace_na(list(ClsRte = "IN")) %>% 
   # Drop ferry routes
-  dplyr::filter(cls_rte != "Liaison maritime")
+  dplyr::filter(ClsRte != "Liaison maritime")
 ```
 
 Let's inspect the prevalence of each class and the proportion of the total length of each of these classes that are `unpaved`, `paved`, and `unknown` in the subset of non-forest roads identified in Section 2.2.
@@ -194,7 +193,7 @@ Let's inspect the prevalence of each class and the proportion of the total lengt
 # Get subset
 non_forest_roads <- aqrp_roads %>% 
   # Non-forest roads (77,422 roads of 664,540)
-  dplyr::filter(cls_che_for == "NF")
+  dplyr::filter(Cls_CheFor == "NF")
 
 # Compute proportions
 cls_road_proportions <- non_forest_roads %>% 
@@ -202,10 +201,10 @@ cls_road_proportions <- non_forest_roads %>%
   dplyr::mutate(length = sf::st_length(geometry)) %>%
   sf::st_drop_geometry() %>% 
   # Group by Cls_Rte and compute total length of road in each class
-  dplyr::group_by(cls_rte) %>% 
+  dplyr::group_by(ClsRte) %>% 
   dplyr::mutate(cls_rte_length_total = sum(length)) %>% 
   # Summarize total length for each surface type within each road class
-  dplyr::group_by(cls_rte, surface) %>% 
+  dplyr::group_by(ClsRte, surface) %>% 
   dplyr::summarise(total_length_surface = sum(length)) %>%
   # Compute total length of each class, then proportion of surfaces in-class
   dplyr::mutate(
@@ -217,8 +216,8 @@ cls_road_proportions <- non_forest_roads %>%
 
 # Subset road class counts
 ggplot2::ggplot(
-  data = tidyr::complete(non_forest_roads, cls_rte, surface),
-  mapping = ggplot2::aes(cls_rte)
+  data = tidyr::complete(non_forest_roads, ClsRte, surface),
+  mapping = ggplot2::aes(ClsRte)
 ) +
   ggplot2::geom_bar(
     mapping = ggplot2::aes(fill = surface),
@@ -237,7 +236,7 @@ ggplot2::ggplot(
 
 
 # Visualize proportions of paved/unpaved/unknown surface in each road class
-ggplot2::ggplot(cls_road_proportions, ggplot2::aes(cls_rte, proportion)) +
+ggplot2::ggplot(cls_road_proportions, ggplot2::aes(ClsRte, proportion)) +
   ggplot2::geom_bar(
     mapping = ggplot2::aes(fill = surface),
     position = "stack", stat = "identity"
@@ -260,41 +259,30 @@ Nothing too conclusive here, but:
 
 When a road surface is unknown, the proximity to built up areas is a great indicator of the presence of pavement. We will use Microsoft's global building footprint available [here](https://github.com/microsoft/GlobalMLBuildingFootprints) and preprocessed to create a 2-km buffer around buildings in the study area using the script `R/get_building_footprint.R`. We will overlay non-forest roads with `unknown` surface over the building footprint. 
 
-```{r}
+```{r fig.height = 7}
 # Bounding box object
 non_forest_roads_bbox <- sf::st_bbox(non_forest_roads)
 
-# Admin boundaries
-statcan_qc_on <- sf::read_sf("data/study_area/statcan_admin_bounds.shp") %>%
- # Filter QC and ON
- dplyr::filter(PRUID %in% c(24, 35))
+# Quewbec admin boundaries
+statcan_qc <- sf::read_sf("data/study_area/statcan_admin_bounds.shp") %>%
+ # Filter QC
+ dplyr::filter(PRUID == 24)
 
-# Quick plot
-unknown_surface_plot <- ggplot2::ggplot() +
-  # Add Québec/Ontario polygon
-  ggplot2::geom_sf(data = statcan_qc_on) +
-  # Add global building footprint 2-km buffer
-  ggplot2::geom_sf(data = building_footprint, fill = "grey30") +
-  # Add nopn-forest roads subset
-  ggplot2::geom_sf(
-    data = dplyr::filter(non_forest_roads, surface == "unknown"),
-    colour = "red"
-  ) +
-  # Labs
-  ggplot2::labs(colour = "Surface type") +
-  # Add coords
-  ggplot2::coord_sf(
-    xlim = c(non_forest_roads_bbox[1], non_forest_roads_bbox[3]),
-    ylim = c(non_forest_roads_bbox[2], non_forest_roads_bbox[4])
-  ) +
-  theme_caribou +
-  NULL
-
-# Add interactive map
-plotly::ggplotly(unknown_surface_plot)
+# Build a map
+mapview::mapview(
+  sf::st_intersection(sf::st_as_sf(building_footprint), statcan_qc),
+  layer.name = "Building footprint - 2km buffer",
+  col.regions = "grey30"
+) +
+  mapview::mapview(
+    dplyr::filter(non_forest_roads, surface == "unknown") %>% 
+      dplyr::select(AQRP_UUID, ClsRte, Cls_CheFor, surface),
+    layer.name = "Non-forest roads - Unknown surface",
+    color = "red"
+  )
 ```
 
-Most non-forest roads with an `unknown` surface type are concentrated more densely populated areas in the southern part of the study area, such as Lac St-Jean and Abitibi. Also highlighted are the long roads for the LG Hydro-Québec complexes in the northern part of the study range.   
+Most non-forest roads with an `unknown` surface type are concentrated in more densely populated areas in the southern part of the study area, such as Lac St-Jean and Abitibi. Also highlighted are the long roads for the LG Hydro-Québec complexes in the northern part of the study range.   
 
 Two large points need to be addressed: 
 
@@ -309,7 +297,7 @@ In forest roads, all `surface` that remain `unknown` will be reclassified as `un
 ```{r}
 # Create subset of forest roads
 forest_roads_reclass <- aqrp_roads %>% 
-  dplyr::filter(cls_che_for != "NF") %>% 
+  dplyr::filter(Cls_CheFor != "NF") %>% 
   # Reclassify
   dplyr::mutate(
     surface = dplyr::if_else(
@@ -329,19 +317,19 @@ In non-forest roads, there are a lot of `unknown`s. If a road is within 2km of a
 ```{r}
 # Subset non-forest roads with known surface
 nonforest_roads_known_surface <- aqrp_roads %>% 
-  dplyr::filter(cls_che_for == "NF", surface != "unknown")
+  dplyr::filter(Cls_CheFor == "NF", surface != "unknown")
 
 # Reclassify non-forest roads with unknown surface as paved if...
 nonforest_roads_reclassed_paved <- aqrp_roads %>% 
-  dplyr::filter(cls_che_for == "NF", surface == "unknown") %>% 
+  dplyr::filter(Cls_CheFor == "NF", surface == "unknown") %>% 
   # ...they intersect the building footprint's 2km buffer
   sf::st_filter(building_footprint) %>% 
   dplyr::mutate(surface = "paved")
 
 # Reclassify remaining non-forest roads with unknown surface as unpaved
 nonforest_roads_reclassed_unpaved <- aqrp_roads %>% 
-  dplyr::filter(cls_che_for == "NF", surface == "unknown") %>% 
-  dplyr::filter(!(aqrp_uuid %in% nonforest_roads_reclassed_paved$aqrp_uuid)) %>% 
+  dplyr::filter(Cls_CheFor == "NF", surface == "unknown") %>% 
+  dplyr::filter(!(AQRP_UUID %in% nonforest_roads_reclassed_paved$AQRP_UUID)) %>% 
   dplyr::mutate(surface = "unpaved")
 
 # Bind rows of subsets
@@ -355,7 +343,7 @@ nonforest_roads_reclassed <- dplyr::bind_rows(
 Lets quickly check that we have the desired changes, there should be no more non-forest roads with an `unknown` surface type.
 ```{r}
 # Tally surface types before reclassification
-dplyr::filter(aqrp_roads, cls_che_for == "NF") %>%
+dplyr::filter(aqrp_roads, Cls_CheFor == "NF") %>%
   sf::st_drop_geometry() %>%
   dplyr::group_by(surface) %>%
   tally()
@@ -381,13 +369,11 @@ dplyr::bind_rows(nonforest_roads_reclassed, forest_roads_reclass) %>%
 Throughout the study area, small bridges across creeks encountered by logging roads are categorized as `paved` roads, which isn't quite correct. For the purposes of this project we will reclassify these as `unpaved`. This preprocessing step is computation-heavy, so we provide a small reproducible example illustrating the steps of the procedure.
 
 ## 4.1 Small area map for reproducible example
-
-
-```{r warning=FALSE}
+```{r fig.height = 7, warning=FALSE}
 # Define bbox of reproducible example
 reprex_bbox <- aqrp_roads %>%
   # This bridge is a logging road and not paved
-  dplyr::filter(aqrp_uuid == "8eab84e2-b859-4bfd-a184-b738990548c8") %>% 
+  dplyr::filter(AQRP_UUID == "8eab84e2-b859-4bfd-a184-b738990548c8") %>% 
   sf::st_buffer(500) %>% 
   sf::st_bbox() %>% 
   sf::st_as_sfc() 
@@ -396,21 +382,13 @@ reprex_bbox <- aqrp_roads %>%
 reprex_aqrp <- aqrp_roads %>%
   sf::st_intersection(reprex_bbox)
 
-# Plot object
-reprex_plot <- ggplot2::ggplot() +
-  ggplot2::geom_sf(
-    data = reprex_aqrp,
-    mapping = ggplot2::aes(colour = surface, linewidth = surface)
-  ) +
-  ggplot2::scale_linewidth_manual(values = c(1, 0.5)) +
-  ggplot2::labs(
-    colour = "",
-    linewidth = ""
-  ) +
-  theme_caribou
-
-# Interactive plot
-plotly::ggplotly(reprex_plot)
+# Build a map
+mapview::mapview(
+  dplyr::select(reprex_aqrp, AQRP_UUID, surface),
+  zcol = "surface",
+  color = scales::hue_pal(),
+  layer.name = "Isolated paved roads"
+)
 ```
 
 ## 4.2 Reclassify as `unpaved` using spatial filter
@@ -432,7 +410,7 @@ paved_roads_reclass <- paved_roads_to_check %>%
       # Compute number of paved roads nearby
       n_paved_roads_nearby <- paved_roads_to_check %>%
         # Remove the paved segment of interest from aqrp dataset
-        dplyr::filter(aqrp_uuid != .x$aqrp_uuid) %>% 
+        dplyr::filter(AQRP_UUID != .x$AQRP_UUID) %>% 
         # Filter for any intersecting roads within 100 m
         sf::st_filter(sf::st_buffer(.x, 100)) %>%
         # Count how many are paved
@@ -462,23 +440,14 @@ reprex_aqrp <- dplyr::bind_rows(unpaved_roads, paved_roads_reclass)
 ```
 
 ## 4.3 Visualize the reclassified roads
-```{r}
-# Plot object
-reclass_plot <- ggplot2::ggplot() +
-  ggplot2::geom_sf(
-    data = reprex_aqrp,
-    mapping = ggplot2::aes(colour = surface, linewidth = surface)
-  ) +
-  ggplot2::scale_linewidth_manual(values = c(0.5, 1),) +
-  ggplot2::scale_colour_manual(values = c("#00BFC4","#F8766D")) +
-  ggplot2::labs(
-    colour = "",
-    linewidth = ""
-  ) +
-  theme_caribou
-
-# Interactive plot
-plotly::ggplotly(reclass_plot)
+```{r fig.height = 7}
+# Build a map
+mapview::mapview(
+  dplyr::select(reprex_aqrp, AQRP_UUID, surface),
+  zcol = "surface",
+  color = scales::hue_pal(),
+  layer.name = "Reclassified isolated paved roads"
+)
 ```
 # 5. Visualizing final output
 

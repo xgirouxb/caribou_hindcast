@@ -17,7 +17,8 @@ knitr::opts_chunk$set(
   message = FALSE,
   # Center plots
   fig.align = 'center',
-  fig.width = 8.5
+  fig.height = 7,
+  fig.width = 9.5
 )
 ```
 
@@ -29,30 +30,24 @@ targets::tar_load(study_area)
 # 1. Import and visualize boreal woodland caribou range shapefiles
 ```{r}
 # Read in Quebec ranges
-quebec_ranges <- sf::read_sf(dsn = 'data/study_area/quebec_caribou_ranges.shp')
+quebec_ranges <- sf::read_sf("data/study_area/quebec_caribou_ranges.shp")
 
 # Read in Ontario ranges
-ontario_ranges <- sf::read_sf(dsn = 'data/study_area/ontario_caribou_ranges.shp')
+ontario_ranges <- sf::read_sf("data/study_area/ontario_caribou_ranges.shp")
 
-# ggplot object
-caribou_ranges <- ggplot2::ggplot() +
-  ggplot2::geom_sf(
-    data = quebec_ranges,
-    mapping = ggplot2::aes(fill = NOM_POP),
-    alpha = 0.5
-  ) +
-  ggplot2::geom_sf(
-    data = ontario_ranges,
-    mapping = ggplot2::aes(fill = RANGE_NAME),
-    alpha = 0.5
-  ) +
-  theme_caribou +
-  ggplot2::labs(fill = "Herd ranges") +
-  NULL
-
-# Plotly interactive pbject
-plotly::ggplotly(caribou_ranges) 
+# Build a map
+mapview::mapview(
+  quebec_ranges,
+  layer.name = "Québec caribou herd ranges",
+  zcol = "NOM_POP"
+) +
+  mapview::mapview(
+    ontario_ranges,
+    layer.name = "Ontario caribou herd ranges",
+    zcol = "RANGE_NAME"
+  )
 ```
+
 
 # 2. Make a hull of all caribou ranges
 ```{r}
@@ -66,25 +61,21 @@ caribou_hull <- dplyr::bind_rows(quebec_ranges, ontario_ranges) %>%
   # dplyr::glimpse() %>% 
   {.}
 
-# Make ggplot map object
-caribou_hull_map <- ggplot2::ggplot() +
-  ggplot2::geom_sf(data = caribou_hull) +
-  ggplot2::geom_sf(
-    data = quebec_ranges,
-    mapping = ggplot2::aes(fill = NOM_POP),
-    alpha = 0.5
+# Build a map
+mapview::mapview(
+  quebec_ranges,
+  layer.name = "Québec caribou herd ranges",
+  zcol = "NOM_POP"
+) +
+  mapview::mapview(
+    ontario_ranges,
+    layer.name = "Ontario caribou herd ranges",
+    zcol = "RANGE_NAME"
   ) +
-  ggplot2::geom_sf(
-    data = ontario_ranges,
-    mapping = ggplot2::aes(fill = RANGE_NAME),
-    alpha = 0.5
-  ) +
-  theme_caribou +
-  ggplot2::labs(fill = "Herd range") +
-  NULL
-
-# Add map
-plotly::ggplotly(caribou_hull_map)
+  mapview::mapview(
+    caribou_hull,
+    layer.name = "Boreal caribou herd hull"
+  )
 ```
 
 # 3. Get Ontario and Quebec administrative boundaries
@@ -107,16 +98,16 @@ qc_on_poly <- sf::read_sf(
   # glimpse() %>%
   {.}
 
-# Make ggplot object
-qc_on_poly_plot <- ggplot2::ggplot() +
-  ggplot2::geom_sf(data = qc_on_poly) +
-  ggplot2::geom_sf(data = caribou_hull, fill = "forestgreen", alpha = 0.5) +
-  theme_caribou +
-  ggplot2::theme(legend.position = "none") +
-  NULL
-
-# Add map
-plotly::ggplotly(qc_on_poly_plot)
+# Build a map
+mapview::mapview(
+  qc_on_poly,
+  layer.name = "Provincial boundaries"
+) +
+  mapview::mapview(
+    caribou_hull,
+    layer.name = "Boreal caribou herd hull",
+    col.regions = "forestgreen"
+  )
 ```
 
 # 4. Study area as intersection of hull and provincial boundaries
@@ -125,15 +116,14 @@ plotly::ggplotly(qc_on_poly_plot)
 study_area <- caribou_hull %>% 
   sf::st_intersection(qc_on_poly)
 
-# Create ggplot object
-caribou_hull_clipped_plot <- ggplot2::ggplot() +
-  ggplot2::geom_sf(data = qc_on_poly) +
-  ggplot2::geom_sf(
-    data = study_area,
-    colour = "red", fill = "forestgreen", alpha = 0.5
-  ) +
-  NULL
-
-# Add map
-plotly::ggplotly(caribou_hull_clipped_plot)
+# Build a map
+mapview::mapview(
+  qc_on_poly,
+  layer.name = "Provincial boundaries"
+) +
+  mapview::mapview(
+    study_area,
+    layer.name = "Study area",
+    col.regions = "forestgreen"
+  )
 ```
