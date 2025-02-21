@@ -1,6 +1,7 @@
 # Load packages required to define the pipeline:
 library(targets)
 library(tarchetypes)
+library(geotargets)
 
 # Set target options:
 tar_option_set(
@@ -20,6 +21,9 @@ tar_option_set(
   # Run garbage collection before launching a target
   garbage_collection = TRUE
 )
+
+# Set geotargets options:
+geotargets_option_set(gdal_raster_driver = "GTiff")
 
 # Run all the R scripts in the R/ folder
 tar_source()
@@ -83,5 +87,18 @@ list(
   tar_render(
     name = notebook_preprocess_ontario_roads,
     path = "notebooks/notes_preprocess_ontario_roads.Rmd"
+  ),
+  # Compute paved road density
+  tar_terra_rast(
+    name = paved_road_density,
+    command = compute_paved_road_density(
+      study_area,
+      quebec_roads,
+      ontario_roads,
+      n_workers = round(parallelly::availableCores()*0.25)
+    )
+    # # Use once geotargets is updated, currently defaults to INT4S 
+    # # see https://github.com/njtierney/geotargets/pull/137
+    # datatype = "INT2U"
   )
 )

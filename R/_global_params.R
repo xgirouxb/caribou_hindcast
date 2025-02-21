@@ -1,6 +1,13 @@
 # Projection parameters: epsg.io/3979
 study_proj <- 3979
 
+# Radius for circular neighbourhood statistics (in metres)
+radius <- 1000
+
+# Tiling parameters for large computations
+nx <- 20
+ny <- 20
+
 # Study ggplot2 custom theme
 theme_caribou <- ggplot2::theme_bw() +
   ggplot2::theme(
