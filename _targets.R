@@ -78,5 +78,10 @@ list(
       mnr_roads,
       n_workers = round(parallelly::availableCores()*0.5)
     )
+  ),
+  # Knit notebook illustrating preprocessing steps for Ontario roads
+  tar_render(
+    name = notebook_preprocess_ontario_roads,
+    path = "notebooks/notes_preprocess_ontario_roads.Rmd"
   )
 )

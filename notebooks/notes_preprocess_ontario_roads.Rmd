@@ -1,0 +1,494 @@
+---
+title: "Notes on Ontario preprocessing of ORN and MNR road networks"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: yes
+    highlight: zenburn
+    theme: sandstone
+    toc: yes
+---
+
+```{r, setup, include=FALSE, purl=FALSE}
+# Set code chunk options
+knitr::opts_chunk$set(
+  # Suppress warnings/messages
+  warning = FALSE, 
+  message = FALSE,
+  # Center plots
+  fig.align = 'center',
+  fig.width = 8.5
+)
+
+# Hide this workflow dependency for greater simplicity
+tar_load(study_area)
+```
+
+# 0. Define targets workflow dependency
+```{r}
+targets::tar_load(orn_roads)
+targets::tar_load(mnr_roads)
+```
+
+# 1. Explore the Ontario Road Network (ORN) elements dataset
+
+The ORN dataset and associated metadata are publicly available here:
+`https://geohub.lio.gov.on.ca/datasets/mnrf::ontario-road-network-orn-road-net-element/about`.
+
+The ORN dataset contains municipal roads, provincial highways, and some resource/recreational roads although these later will need to be supplemented with more detailed information on logging roads provided by the MNR. Let's take a quick look.
+```{r}
+# Bounding box object
+orn_bbox <- sf::st_bbox(orn_roads)
+
+# Admin boundaries
+statcan_qc_on <- sf::read_sf("data/study_area/statcan_admin_bounds.shp") %>%
+ # Filter QC and ON
+ dplyr::filter(PRUID %in% c(24, 35))
+
+# Quick plot
+ggplot2::ggplot() +
+ # Add Québec/Ontario polygon
+ ggplot2::geom_sf(data = statcan_qc_on) +
+ # Add caribou range
+ ggplot2::geom_sf(data = study_area, fill = "forestgreen", alpha = 0.7) +
+ # Add ORN roads
+ ggplot2::geom_sf(data = orn_roads) +
+ # Add coords
+ ggplot2::coord_sf(
+   xlim = c(orn_bbox[1], orn_bbox[3]),
+   ylim = c(orn_bbox[2], orn_bbox[4])
+ ) +
+ theme_caribou +
+ NULL
+```
+## 1.1 ORN road types 
+
+There are several attributes of interest to our study. Let's start with `ELEM_TYPE` which describes the type of road.
+```{r}
+ggplot2::ggplot(orn_roads, mapping = ggplot2::aes(x = ELEM_TYPE)) +
+  ggplot2::geom_bar() +
+  ggplot2::scale_y_log10() +
+  ggplot2::labs(
+    x = "Road type",
+    y = "Count"
+  ) +
+  theme_caribou
+```
+
+We are not interested in `FERRY CONNECTION`s or `VIRTUAL ROAD`s so these will need to be removed.
+```{r}
+orn_roads <- orn_roads %>% 
+  # Filter for roads only
+  dplyr::filter(ELEM_TYPE == "ROAD ELEMENT")
+```
+
+## 1.2 ORN road surfaces 
+
+The ORN dataset also provides `ORN_ROAD_SURFACE.csv`, a table with the attrivute `PAVEMENT_STATUS` describing the road surfaces as `Paved` or `Unpaved` which we joined to the shapefile during data imports.
+```{r}
+ggplot2::ggplot(orn_roads, mapping = ggplot2::aes(x = PAVEMENT_STATUS)) +
+  ggplot2::geom_bar() +
+  ggplot2::labs(x = "Surface", y = "Count") +
+  theme_caribou
+```
+Hurrah, no pesky `NA`s :)
+
+## 1.3 ORN road class
+
+The ORN dataset also provides `ORN_ROAD_CLASS.csv`, a table with the attribute `ROAD_CLASS` describing road classes (using the National Road Network scheme) which we joined to the shapefile during data imports.
+```{r}
+ggplot2::ggplot(orn_roads, mapping = ggplot2::aes(x = ROAD_CLASS)) +
+  ggplot2::geom_bar() +
+  ggplot2::labs(
+    x = "Road class",
+    y = "Count"
+  ) +
+  ggplot2::coord_flip() +
+  theme_caribou
+```
+Most road segments are `Resource / Recreation` or `Local / Street` roads. 
+
+## 1.4 Preparing ORN data for merging with MNR dataset
+
+There are a great deal of logging roads missing in the ORN dataset which we will supplement with data from the MNR dataset. However, we need to carefully consider how to merge them as there will be duplicated road segments. Let's clean up the ORN dataset for the joining process.
+
+```{r}
+orn_initial_cleanup <- orn_roads %>% 
+  # Filter for roads only (removes ferry and virtual roads)
+  dplyr::filter(ELEM_TYPE == "ROAD ELEMENT") %>%
+  # Add data source as attribute
+  dplyr::mutate(data_source = "orn") %>% 
+  # Select/rename required columns
+  dplyr::select(
+    # Database of origin
+    data_source,
+    # Ontario Geospatial Feature ID
+    id = OGF_ID,
+    # Road attributes
+    surface = PAVEMENT_STATUS,
+    geometry
+  ) %>%
+  # Cast surface to lowercase
+  dplyr::mutate(surface = stringr::str_to_lower(surface)) %>% 
+  # # Testing
+  # dplyr::glimpse() %>% 
+  {.}
+```
+
+# 2. Explore the Ontario Ministry of Natural Resources' (MNR) road dataset
+
+The MNR dataset and associated metadata are publicly available here:
+`https://geohub.lio.gov.on.ca/datasets/lio::mnrf-road-segments/about`.
+
+The MNR dataset contains spatial information about roads under the jurisdiction of the Ontario Ministry of Natural Resources and Forests. Let's take a quick look.
+```{r}
+# Bounding box object
+mnr_bbox <- sf::st_bbox(mnr_roads)
+
+# Admin boundaries
+statcan_qc_on <- sf::read_sf("data/study_area/statcan_admin_bounds.shp") %>%
+ # Filter QC and ON
+ dplyr::filter(PRUID %in% c(24, 35))
+
+# Quick plot
+ggplot2::ggplot() +
+ # Add Québec/Ontario polygon
+ ggplot2::geom_sf(data = statcan_qc_on) +
+ # Add caribou range
+ ggplot2::geom_sf(data = study_area, fill = "forestgreen", alpha = 0.7) +
+ # Add MNR roads
+ ggplot2::geom_sf(data = mnr_roads) +
+ # Add coords
+ ggplot2::coord_sf(
+   xlim = c(mnr_bbox[1], mnr_bbox[3]),
+   ylim = c(mnr_bbox[2], mnr_bbox[4])
+ ) +
+ theme_caribou +
+ NULL
+```
+
+## 2.1 MNR road surfaces 
+
+There are several attributes of interest to our study. Let's start with
+the `SURFACE_T` attribute which describes road surfaces as `Paved`, `Gravel` or `Unsurfaced`. We can reclassify these as `paved` and `unpaved` for our purposes.
+
+```{r}
+# Reclassify road surfaces
+mnr_roads <- mnr_roads %>% 
+  dplyr::mutate(
+    surface = dplyr::case_when(
+      SURFACE_T == "Paved" ~ "paved",
+      SURFACE_T == "Gravel" ~ "unpaved",
+      SURFACE_T == "Unsurfaced" ~ "unpaved",
+      TRUE ~ NA_character_
+    )
+  )
+
+ggplot2::ggplot(mnr_roads, mapping = ggplot2::aes(x = surface)) +
+  ggplot2::geom_bar() +
+  ggplot2::labs(
+    x = "Surface",
+    y = "Count"
+  ) +
+  ggplot2::scale_y_log10() +
+  theme_caribou
+```
+
+Hurrah, no pesky `NA`s :) Also the log scale on the Y-axis shows that `unpaved` (`Unsurfaced` + `Gravel`) roads dominate this dataset by approximately 3 orders of magnitude.
+
+## 2.2 MNR road classes 
+
+The MNR dataset also provides the `NAT_CLASS` attribute which describes road classification using the National Road Network scheme.
+```{r}
+ggplot2::ggplot(mnr_roads, mapping = ggplot2::aes(x = NAT_CLASS)) +
+  ggplot2::geom_bar() +
+  ggplot2::scale_y_log10() +
+  ggplot2::labs(
+    x = "Road class",
+    y = "Count"
+  ) +
+  theme_caribou
+```
+
+## 2.3 MNR road construction years
+
+The MNR dataset also provides road construction years and the relative confidence of the recorded years in the attributes `YR_CONST` and `YR_CONST_M`, respectively. The year of construction modifier `YR_CONST_M` includes `Actual`, `Approximate`, and `Before` to describe the recorded years. The only years useful for our study are `YR_CONST` with the corresponding attribute `YR_CONST_M == "Actual"`.
+
+```{r}
+ggplot2::ggplot(
+  data = dplyr::filter(mnr_roads, YR_CONST_M == "Actual"),
+  mapping = ggplot2::aes(x = as.factor(YR_CONST))
+) +
+  ggplot2::geom_bar(stat = "count") +
+  # ggplot2::scale_y_log10() +
+  ggplot2::labs(
+    x = "`Actual` construction years",
+    y = "Count"
+  ) +
+  theme_caribou +
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, size = 10)
+  )
+```
+
+Note the presence of years outside our study period of 1985 to 2020, as well as the year 9999 that is not mentioned in the metadata but is likely an `NA` placeholder. In the initial cleaning step below, we will need to make a new column to retain years qualified as `Actual` in our downstream analyses.
+
+## 2.4 Preparing MNR data for merging with ORN
+```{r}
+mnr_initial_cleanup <- mnr_roads %>% 
+  # Actual construction year
+  dplyr::mutate(
+    mnr_const_year = dplyr::if_else(
+      condition = YR_CONST_M == "Actual" & YR_CONST != 9999,
+      true = YR_CONST,
+      false = NA_integer_
+    )
+  ) %>% 
+  # Add data source as attribute
+  dplyr::mutate(data_source = "mnr") %>% 
+  # Select/rename required columns
+  dplyr::select(
+    # Database of origin
+    data_source,
+    # Ontario Geospatial Feature ID
+    id = OGF_ID,
+    # Road attributes
+    surface,
+    mnr_const_year,
+    geometry
+  ) %>% 
+  # # Testing
+  # dplyr::glimpse() %>% 
+  {.}
+```
+
+# 3. Merging algorithm
+
+One of the main challenges in merging the ORN and MNR networks into a single cohesive road network for Ontario is that there is considerable overlap in their respective `LINESTRING`s. Unfortunately there is not common ID attribute that can be used to anti join, and using a spatial join is extremely challenging because the ORN segments that overlap with MNR don't necessarily have the same `LINESTRING`s, meaning some road segments are not in the same position and may have different cuts and lengths. In this section we shall use a small reproducible example to illustrate the procedure used to merge them. 
+
+## 3.1 Illustrate ORN and MNR netowork overlap
+
+Here is a map showing the ORN and MNR network overlap. Take a bit of time to toggle layers on and off to see hwo the networks complete each other.
+```{r}
+# Define AOI based on buffer ORN road segment of interest
+test_aoi <- orn_initial_cleanup %>% 
+  dplyr::filter(id == "6471696") %>% 
+  sf::st_centroid() %>% 
+  sf::st_buffer(20000) %>% 
+  # Cast back to sf object 
+  sf::st_as_sfc()
+
+# Filter ORN and MNR to test AOI
+orn_aoi <- sf::st_intersection(orn_initial_cleanup, test_aoi)
+mnr_aoi <- sf::st_intersection(mnr_initial_cleanup, test_aoi)
+
+# Build a map
+mapview::mapview(orn_aoi, layer.name = "ORN network", color = "red") +
+  mapview::mapview(mnr_aoi, layer.name = "MNR network", color = "forestgreen")
+```
+
+## 3.2 Ilustrate intersection of road segments in each network
+
+The ORN dataset contains main roads, we will use it as a skeleton to build upon. Prior to binding MNRF roads to ORN roads, we must first identify shared road segments and delete them, though we would like to conserve some attributes (such as year of construction) of the deleted road segments for downstream applications. 
+
+And so the deep dive begins. One problem, which I will illustrate here, is that road segments were not “chopped” similarly across both datasets. A single road could be represented by 20 segments in one dataset and 2 in the other. See for example all the distinct segments of MNR roads that touch a 20-metre buffer of a single ORN segment.
+```{r}
+# First we get a ORN road segment
+example_orn_road <- dplyr::filter(orn_aoi, id == "6471696")
+  
+# Create a 5 m buffer around it
+example_orn_buffer <- sf::st_buffer(example_orn_road, 5)
+
+# Now we get all the MNR road segments that intersect
+example_mnr_intersects <- sf::st_filter(mnr_aoi, example_orn_buffer) %>% 
+  # Cast ID to factor
+  dplyr::mutate(id = forcats::as_factor(id))
+
+# Build a map
+mapview::mapview(
+  example_orn_buffer,
+  layer.name = "ORN segment buffer",
+  color = "grey50"
+) +
+  mapview::mapview(
+    example_mnr_intersects,
+    layer.name = "Intersecting MNR segments",
+    zcol = "id", color = scales::hue_pal()
+  )
+```
+
+In the above example, should we choose to delete MNR segments that fall within the ORN  road’s buffer, only the yellow road (`id = 112762783`) would be deleted, and not the corresponding parts of the green (`id = 112762784`) and red (`id = 112762776`) segments.
+
+## 3.3 Explode `LINESTRING`s into individual segments
+
+Instead of using a buffer around each `LINESTRING` in the ONR dataset and hoping that corresponding records in the MNR dataset are identical enough to be matched using a spatial predicate that properly discerns them from surround roads, we can “split” or “explode” the `MULTILINESTRING` geometries of MNR roads into their individual segments (i.e., a single straight line between two vertices). This can be accomplished using the `lwgeom::st_split()` function, similar to explode in `QGIS`.
+```{r}
+# First we need to extract all the vertices from the MNR road segment
+example_mnr_vertices <- example_mnr_intersects %>% 
+  sf::st_cast("POINT")
+
+# Then we can split the MULTILINESTRING using the points
+example_mnr_split <- example_mnr_intersects %>% 
+  # Split MULTILINESTRING into individual lines (stored as geometry collection)
+  lwgeom::st_split(example_mnr_vertices) %>% 
+  # Extract individual LINESTRING for each line 
+  sf::st_collection_extract("LINESTRING") %>% 
+  # Limit to lines that are within ORN buffer
+  sf::st_filter(example_orn_buffer, .predicate = sf::st_within) %>% 
+    # Create unique id for ploting
+  dplyr::mutate(
+    line_id = paste0(dplyr::row_number(), "_", id),
+    line_id = forcats::as_factor(line_id),
+    line_id = forcats::fct_shuffle(line_id)
+  ) %>%
+  {.}
+
+# Build a map
+mapview::mapview(
+  example_orn_buffer,
+  layer.name = "ORN segment buffer",
+  color = "grey50"
+) +
+  mapview::mapview(
+    sf::st_filter(example_mnr_vertices, example_orn_buffer),
+    layer.name = "MNR vertices", color = "black", cex = 1
+  ) +
+  mapview::mapview(
+    example_mnr_split,
+    layer.name = "MNR exploded segment",
+    zcol = "line_id",
+    lwd = 4,
+    color = scales::hue_pal()
+  )
+```
+
+Using this technique we can catch more segments in the MNRF dataset that do not align with those in the ORN dataset all while using `sf::st_within()`, which we can wield like a scalpel to reduce destruction of information and adjacent segments. In the above figure, for example, we catch the green line (`id = 112762784`). While we do not catch `id = 112762776`, the ORN segment immediately to the east will. We also catch a tiny segment of a perpendicular road that is shorter than 5 metres, but this segment is an artifact in the MNR database. While it is possible that a perpendicular road we want to conserve has a tiny line within the first 5 metres of the vertex where it is connected to the network, I anticipate this situation to be extremely rare.
+
+## 3.4 Build a matching table of MNR road segments within ORN 5m buffer
+
+Now we can explode MNR `LINESTRING`s and `MULTILINESTRING`s into individual segments and identify those that fall within a 5m buffer of ORN segments. 
+```{r}
+# Speed things up: only operate on intersecting geom from both road networks
+all_intersecting_mnr_roads <- mnr_aoi %>% 
+  sf::st_filter(sf::st_buffer(orn_aoi, 5))
+all_intersecting_orn_roads <- orn_aoi %>% 
+  sf::st_filter(sf::st_buffer(all_intersecting_mnr_roads, 5))
+
+# Testing
+tictoc::tic()
+
+# Build a table matching ORN roads to MRN roads with exploded segments
+# within ORN buffers
+orn_mnr_join_tbl <- all_intersecting_orn_roads %>% 
+  # Create a 5m buffer around each road
+  sf::st_buffer(5) %>% 
+  # Cast to list of individual ORN road buffers
+  dplyr::group_nest(id) %>% 
+  # Map over each ORN road buffer
+  dplyr::mutate(
+    # Build a table of exploded MNR segments that fall within ORN buffer
+    data = furrr::future_map(
+      .x = data,
+      .f = ~{
+        all_intersecting_mnr_roads %>%
+          # Limit operations to MNR roads that intersect this ORN buffer
+          sf::st_filter(.x, .predicate = sf::st_intersects) %>% 
+          # Explode lines into individual segments\
+          explode_lines() %>%
+          # Filter lines within ORN buffer (st_contains > st_within for speed)
+          # NB see https://github.com/r-spatial/sf/issues/1261
+          dplyr::filter(sf::st_contains(x = .x, y = ., sparse = FALSE)[1,]) %>%
+          # Drop geometries to return tbl
+          sf::st_drop_geometry() %>%
+          # Select columns of interest
+          dplyr::select(
+            inherited_mnr_id = id,
+            inherited_mnr_surface = surface,
+            mnr_const_year
+          )
+      },
+      # Pass seed to {future} to avoid complaints
+      .options = furrr::furrr_options(seed = TRUE)
+    )
+  ) %>% 
+  # Unnest list of tables
+  tidyr::unnest(cols = c(data)) %>%
+  # Get unique combinations of ORN and inherited MNR roads
+  dplyr::distinct() %>%
+  # Group by ORN road
+  dplyr::group_by(id) %>% 
+  # Summarise MNR attributes, assign NA is no MNR segments in ORN road buffer
+  dplyr::summarise(
+    # If ORN road inherits multiple mnr_id's, flatten them to a single string 
+    inherited_mnr_id = stringr::str_flatten(inherited_mnr_id, collapse = ";"),
+    # Save MNR surface as "paved" if any road is paved, otherwise unpaved
+    inherited_mnr_surface = sort(inherited_mnr_surface)[1],
+    # Save the earliest 'Actual' construction year among inherited MNR roads
+    mnr_const_year = ifelse(
+      # Return NA if all are NA
+      all(is.na(mnr_const_year)), NA_integer_,
+      min(mnr_const_year, na.rm = TRUE)
+    )
+  )  
+
+# List of MNR road IDs to be removed
+mnr_roads_to_remove <- orn_mnr_join_tbl %>% 
+  dplyr::pull(inherited_mnr_id) %>% 
+  stringr::str_split(";") %>% 
+  purrr::list_c() %>% 
+  unique()
+
+# Testing
+tictoc::toc()
+```
+
+## 3.5 Join inherited MNR roads to corresponding ORN segments and merge datasets
+
+```{r}
+# Prep MRN for merge
+mrn_roads_to_merge <- mnr_aoi %>% 
+  # Remove MNR roads within ORN roads buffers
+  dplyr::filter(!(id %in% mnr_roads_to_remove)) %>% 
+  # # Testing
+  # dplyr::glimpse() %>% 
+  {.}
+
+# Prep ORN for merge
+orn_roads_to_merge <- orn_aoi %>% 
+  # Join inherited MRN road attributes
+  dplyr::left_join(orn_mnr_join_tbl, by = dplyr::join_by(id)) %>% 
+  # Reconcile surface differences with inherited MNR attributes
+  dplyr::mutate(surface = case_when(
+      is.na(inherited_mnr_surface) ~ surface,
+      surface == inherited_mnr_surface ~ surface,
+      # If MNR and ORN disagree, choose "paved"
+      surface != inherited_mnr_surface ~ sort(c(surface, inherited_mnr_surface))[1],
+      TRUE ~ NA_character_
+    )) %>% 
+  # Clean up
+  dplyr::select(-inherited_mnr_surface) %>% 
+  # # Testing
+  # dplyr::glimpse() %>% 
+  {.}
+
+# Merge
+merged_roads_aoi <- dplyr::bind_rows(orn_roads_to_merge, mrn_roads_to_merge) %>% 
+  # # Testing
+  # dplyr::glimpse() %>% 
+  {.}
+
+# Build a map
+mapview::mapview(orn_aoi, layer.name = "ORN network", color = "red") +
+  mapview::mapview(mnr_aoi, layer.name = "MNR network", color = "forestgreen") +
+  mapview::mapview(
+    merged_roads_aoi,
+    layer.name = "Merged ORN + MNR",
+    zcol = "data_source",
+    lwd = 3,
+    color = c("forestgreen", "red") #scales::hue_pal()
+  )
+```
+
+This map demonstrates the final results of this strategy, we can carefully zoom and toggle individual datasets and visualize tables for each segment to see where it came from. 
+
+Preprocessing and mergin of complete Ontario road dataset is undertaken in `preprocess_road_networks.R`.
