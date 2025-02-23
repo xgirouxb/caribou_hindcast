@@ -88,17 +88,26 @@ list(
     name = notebook_preprocess_ontario_roads,
     path = "notebooks/notes_preprocess_ontario_roads.Rmd"
   ),
-  # Compute paved road density
-  tar_terra_rast(
-    name = paved_road_density,
-    command = compute_paved_road_density(
-      study_area,
+  # Estimate unpaved road construction years
+  tar_target(
+    name = unpaved_construction_years,
+    command = estimate_road_construction_years(
       quebec_roads,
       ontario_roads,
-      n_workers = round(parallelly::availableCores()*0.25)
+      canlad_road_construction_years
     )
-    # # Use once geotargets is updated, currently defaults to INT4S 
-    # # see https://github.com/njtierney/geotargets/pull/137
-    # datatype = "INT2U"
-  )
+  )#,
+  # # Compute paved road density
+  # tar_terra_rast(
+  #   name = paved_road_density,
+  #   command = compute_paved_road_density(
+  #     study_area,
+  #     quebec_roads,
+  #     ontario_roads,
+  #     n_workers = round(parallelly::availableCores()*0.25)
+  #   )
+  #   # # Use once geotargets is updated, currently defaults to INT4S 
+  #   # # see https://github.com/njtierney/geotargets/pull/137
+  #   # datatype = "INT2U"
+  # )
 )

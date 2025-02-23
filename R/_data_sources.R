@@ -6,3 +6,4 @@ quebec_aqrp_roads_url <- "https://diffusion.mern.gouv.qc.ca/Diffusion/RGQ/Vector
 ontario_mnr_roads_url <- "https://www.gisapplication.lrc.gov.on.ca/fmedatadownload/Packages/MNRRDSEG.zip"
 ontario_orn_roads_url <- "https://www.gisapplication.lrc.gov.on.ca/fmedatadownload/Packages/ORNELEM.zip"
 global_buildings_datalinks_url <- "https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv"
+canlad_road_construction_years <- "data/canlad_road_construction_years/canlad_road_construction_years.csv"
