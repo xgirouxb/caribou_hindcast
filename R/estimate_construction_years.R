@@ -7,10 +7,10 @@ estimate_road_construction_years <- function(
   # Import CanLaD year of disturbance around each road
   canlad_yod <- readr::read_csv(
     file = canlad_road_construction_years,
-    guess_max = Inf,
     show_col_types = FALSE,
     progress = FALSE
-  )
+  ) %>% 
+    dplyr::mutate(dplyr::across(dplyr::starts_with("yod"), as.integer))
   
   # Import unpaved roads table
   unpaved_roads <- dplyr::bind_rows(
@@ -67,10 +67,12 @@ estimate_road_construction_years <- function(
       )
     ) %>% 
     # Clean up
-    dplyr::select(id, const_year) %>% 
-    # # Testing
-    # dplyr::glimpse() %>% 
-    {.}
+    dplyr::select(id, const_year)
+  
+  # Sanity check 
+  if(any(unpaved_construction_years$const_year == 9999, na.rm = TRUE)) { 
+    stop("Year classification error") 
+  }
   
   # Return table of estimated road construction years
   return(unpaved_construction_years)
