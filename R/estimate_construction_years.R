@@ -10,6 +10,7 @@ estimate_road_construction_years <- function(
     show_col_types = FALSE,
     progress = FALSE
   ) %>% 
+    # Cast year of disturbance to integer, fixes dbl-int clash in logical %in% 
     dplyr::mutate(dplyr::across(dplyr::starts_with("yod"), as.integer))
   
   # Import unpaved roads table
