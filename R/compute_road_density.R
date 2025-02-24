@@ -40,7 +40,7 @@ compute_paved_road_density <- function(
     )
   }
   
-  # Compute unpaved road density in tiles 
+  # Compute paved road density in tiles 
   furrr::future_walk(
     .x = 1:nrow(tiles),
     .f = ~{
