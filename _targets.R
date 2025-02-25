@@ -109,5 +109,27 @@ list(
     # # Use once geotargets is updated, currently defaults to INT4S
     # # see https://github.com/njtierney/geotargets/pull/137
     # datatype = "INT2U"
+  ),
+  # Add study years as target to allow dynamic branching
+  tar_target(
+    name = study_years,
+    command = seq(1985, 2020, 5)
+  ),
+  # Compute unpaved road density across all study years
+  # NB Requires targets established by dynamic branching
+  tar_terra_rast(
+    name = unpaved_road_density,
+    command = compute_unpaved_road_density(
+      study_area,
+      quebec_roads,
+      ontario_roads,
+      unpaved_construction_years,
+      year = study_years,
+      n_workers = round(parallelly::availableCores()*0.25)
+    ),
+    # # Use once geotargets is updated, currently defaults to INT4S
+    # # see https://github.com/njtierney/geotargets/pull/137
+    # datatype = "INT2U",
+    pattern = map(study_years)
   )
 )
