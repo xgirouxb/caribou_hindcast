@@ -110,6 +110,19 @@ list(
     # # see https://github.com/njtierney/geotargets/pull/137
     # datatype = "INT2U"
   ),
+  # Compute paved road distance
+  tar_terra_rast(
+    name = paved_road_distance,
+    command = compute_paved_road_distance(
+      study_area,
+      quebec_roads,
+      ontario_roads,
+      n_workers = round(parallelly::availableCores()*0.25)
+    )
+    # # Use once geotargets is updated, currently defaults to INT4S
+    # # see https://github.com/njtierney/geotargets/pull/137
+    # datatype = "INT2U"
+  ),
   # Add study years as target to allow dynamic branching
   tar_target(
     name = study_years,

@@ -4,6 +4,9 @@ study_proj <- 3979
 # Radius for circular neighbourhood statistics (in metres)
 radius <- 1000
 
+# Zone of influence (ZOI) for "distance to" metrics and model weights
+zoi <- 5000
+
 # Tiling parameters for large computations
 nx <- 20
 ny <- 20
