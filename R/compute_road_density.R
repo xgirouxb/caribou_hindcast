@@ -28,7 +28,7 @@ compute_paved_road_density <- function(
     # Add tile ID
     dplyr::mutate(tile_id = dplyr::row_number()) %>% 
     # # Testing
-    # dplyr::filter(tile_id %in% 1:2) %>% 
+    # dplyr::filter(tile_id %in% 1:2) %>%
     {.}
 
   # Setup parallel processing if n_workers is supplied
@@ -44,11 +44,14 @@ compute_paved_road_density <- function(
   furrr::future_walk(
     .x = 1:nrow(tiles),
     .f = ~{
-      # Define AOI
-      aoi <- sf::st_intersection(study_area, tiles[.x,])
+      # Define AOI, add 2-pixel buffer to eliminate edge effects
+      # (ensures small tile overlap in downstream mosaic)
+      aoi <- sf::st_intersection(study_area, tiles[.x,]) %>% 
+        sf::st_buffer(60)
       
-      # Define AOI with added radius and 3 pixel buffer to reduce edge effects
-      aoi_buffer <- sf::st_buffer(aoi, radius + 90)
+      # Define AOI with added radius + 2-pixel buffer to reduce edge effects for
+      # circular neighbourhood
+      aoi_buffer <- sf::st_buffer(aoi, radius + 60)
       
       # Filter paved roads that intersect AOI buffer 
       roads_aoi <-  sf::st_filter(paved_roads, aoi_buffer)
@@ -167,11 +170,14 @@ compute_unpaved_road_density <- function(
   furrr::future_walk(
     .x = 1:nrow(tiles),
     .f = ~{
-      # Define AOI
-      aoi <- sf::st_intersection(study_area, tiles[.x,])
+      # Define AOI, add 2-pixel buffer to eliminate edge effects
+      # (ensures small tile overlap in downstream mosaic)
+      aoi <- sf::st_intersection(study_area, tiles[.x,]) %>% 
+        sf::st_buffer(60)
       
-      # Define AOI with added radius and 3 pixel buffer to reduce edge effects
-      aoi_buffer <- sf::st_buffer(aoi, radius + 90)
+      # Define AOI with added radius + 2-pixel buffer to reduce edge effects for
+      # circular neighbourhood
+      aoi_buffer <- sf::st_buffer(aoi, radius + 60)
       
       # Filter unpaved roads that intersect AOI buffer 
       roads_aoi <-  sf::st_filter(unpaved_roads, aoi_buffer)
