@@ -144,5 +144,21 @@ list(
     # # see https://github.com/njtierney/geotargets/pull/137
     # datatype = "INT2U",
     pattern = map(study_years)
-  )
-)
+  ),
+  # Compute unpaved road distance across all study years
+  # NB Requires targets established by dynamic branching
+  tar_terra_rast(
+    name = unpaved_road_distance,
+    command = compute_unpaved_road_distance(
+      study_area,
+      quebec_roads,
+      ontario_roads,
+      unpaved_construction_years,
+      year = study_years,
+      n_workers = round(parallelly::availableCores()*0.25)
+    ),
+    # # Use once geotargets is updated, currently defaults to INT4S
+    # # see https://github.com/njtierney/geotargets/pull/137
+    # datatype = "INT2U",
+    pattern = map(study_years)
+  ),
