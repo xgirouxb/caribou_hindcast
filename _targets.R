@@ -113,7 +113,7 @@ list(
   # Add study years as target to allow dynamic branching
   tar_target(
     name = study_years,
-    command = seq(1985, 2020, 5)
+    command = time_steps
   ),
   # Compute unpaved road density across all study years
   # NB Requires targets established by dynamic branching

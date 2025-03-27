@@ -9,7 +9,7 @@ nx <- 20
 ny <- 20
 
 # Study years
-study_years <- seq(1985, 2020, 5)
+time_steps <- seq(1985, 2020, 5)
 
 # Study ggplot2 custom theme
 theme_caribou <- ggplot2::theme_bw() +
