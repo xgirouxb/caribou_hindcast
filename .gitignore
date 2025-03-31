@@ -9,9 +9,10 @@
 data/
 outputs/
 
-# Notebooks in .html or .md
+# Notebooks in .html, .md, or recycled
 notebooks/*.html
 notebooks/*.md
+notebooks/_recycle_bin/
 
 # renv project files
 renv/library/
