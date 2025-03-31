@@ -123,6 +123,14 @@ list(
     # # see https://github.com/njtierney/geotargets/pull/137
     # datatype = "INT2U"
   ),
+  # Compute residual habitat suitability in paved road zone of influence
+  tar_terra_rast(
+    name = paved_roads_zoi_residual_suitability,
+    command = compute_paved_roads_zoi_residual_suitability(
+      paved_road_distance
+      # n_workers = round(parallelly::availableCores()*0.25)
+    )
+  ),
   # Add study years as target to allow dynamic branching
   tar_target(
     name = study_years,
@@ -162,3 +170,13 @@ list(
     # datatype = "INT2U",
     pattern = map(study_years)
   ),
+  # Compute residual habitat suitability in unpaved road zone of influence
+  tar_terra_rast(
+    name = unpaved_roads_zoi_residual_suitability,
+    command = compute_unpaved_roads_zoi_residual_suitability(
+      unpaved_road_distance
+    ),
+    # Map across each layer produced by dynamic branching
+    pattern = map(unpaved_road_distance)
+  )
+)
