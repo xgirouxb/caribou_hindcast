@@ -6,4 +6,4 @@ The data pipeline in this repo is managed by the `targets` package and all packa
 
 ## Data sources
 
-All the data used in this pipeline is designed to be retrieved from URLs and stored locally in a target to ensure reproducible results. Data sources are described in the `_data_sources.R`. The only exception is a table listing the years of logging disturbances extracted from the pixel distributions in the CanLaD data products within variable buffers around each road. This table was produced using `Google Earth Engine`'s JavaScript API with the `extract_canlad_disturbance_years.js` script stored in the `/js` folder.
+All the data used in this pipeline are designed to be retrieved from URLs and stored locally in a target to ensure reproducible results. Data source URLs and links to associated metadata are listed in `_data_sources.R`. The only exception is a `csv` table listing the years of logging disturbances extracted from the pixel distributions in the CanLaD data products within variable buffers around each road. This table was produced using `Google Earth Engine`'s JavaScript API with the `extract_canlad_disturbance_years.js` script stored in the `/js` folder.
