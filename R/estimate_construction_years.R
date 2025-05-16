@@ -16,8 +16,7 @@ estimate_road_construction_years <- function(
   # Import unpaved roads table
   unpaved_roads <- dplyr::bind_rows(
     dplyr::filter(quebec_roads, surface == "unpaved"),
-    dplyr::filter(ontario_roads, surface == "unpaved") %>% 
-      dplyr::mutate(id = as.character(id))
+    dplyr::filter(ontario_roads, surface == "unpaved")
   ) %>% 
     # Drop geometries
     sf::st_drop_geometry() %>% 

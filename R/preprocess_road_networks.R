@@ -306,8 +306,70 @@ preprocess_ontario_roads <- function(orn_roads, mnr_roads, n_workers = NULL){
     dplyr::select(-inherited_mnr_surface)
   
   # Merged Ontario road network
-  ontario_roads <- dplyr::bind_rows(orn_roads_to_merge, mrn_roads_to_merge)
+  ontario_roads <- dplyr::bind_rows(orn_roads_to_merge, mrn_roads_to_merge) %>%
+    # Cast as character to avoid errors when merging with AQRP ids
+    dplyr::mutate(id = as.character(id))
   
-  # Return
-  return(ontario_roads)
+  # STEP 5: Reclassification of small isolated paved road segments
+  
+  # Reduce size of dataset to distribute across cores
+  paved_roads_to_check <- ontario_roads %>% 
+    dplyr::filter(surface == "paved")
+  unpaved_roads <- ontario_roads %>% 
+    dplyr::filter(surface == "unpaved")
+  
+  # Setup parallel processing if n_workers is supplied
+  if(!is_null(n_workers)) { 
+    future::plan(
+      strategy = "future::multisession",
+      workers = n_workers,
+      gc = TRUE
+    )
+  }
+  
+  # Reclassify paved segments on logging roads (e.g., small bridges)
+  paved_roads_reclassed <- paved_roads_to_check %>%
+    # Nest by row
+    dplyr::group_nest(dplyr::row_number()) %>% 
+    # Extract list
+    dplyr::pull(data) %>% 
+    # Map over each paved road
+    furrr::future_map(
+      # Spatial logic filtering function
+      .f = ~ {
+        # Compute number of paved roads nearby
+        n_paved_roads_nearby <- paved_roads_to_check %>%
+          # Remove the paved segment of interest from ontario dataset
+          dplyr::filter(id != .x$id) %>% 
+          # Filter for any intersecting roads within 100 m
+          sf::st_filter(sf::st_buffer(.x, 100)) %>%
+          # Count how many are paved
+          dplyr::filter(surface == "paved") %>%
+          nrow()
+        
+        # If none of the neighbouring roads are paved
+        if(n_paved_roads_nearby == 0) {
+          # Reclassify the road of interest as unpaved
+          dplyr::mutate(.x, surface = "unpaved")
+        } else {
+          # Else return unchanged road
+          .x
+        }
+      },
+      # Pass seed to {future} to avoid complaints
+      .options = furrr::furrr_options(seed = TRUE)
+    ) %>%
+    # Recombine list of sf objects into single table
+    purrr::list_rbind() %>%
+    # Cast to sf
+    sf::st_as_sf()
+  
+  # Close parallel processing if n_workers is supplied
+  if(!is_null(n_workers)) { future::plan(strategy = "future::sequential") }
+  
+  # Preprocessed ontario roads
+  preprocessed <- dplyr::bind_rows(paved_roads_reclassed, unpaved_roads)
+  
+  # Return 
+  return(preprocessed)
 }
