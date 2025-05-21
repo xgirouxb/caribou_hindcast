@@ -105,10 +105,9 @@ list(
       quebec_roads,
       ontario_roads,
       n_workers = round(parallelly::availableCores()*0.25)
-    )
-    # # Use once geotargets is updated, currently defaults to INT4S
-    # # see https://github.com/njtierney/geotargets/pull/137
-    # datatype = "INT2U"
+    ),
+    # Unsigned integer
+    datatype = "INT2U"
   ),
   # Compute paved road distance
   tar_terra_rast(
@@ -118,17 +117,15 @@ list(
       quebec_roads,
       ontario_roads,
       n_workers = round(parallelly::availableCores()*0.25)
-    )
-    # # Use once geotargets is updated, currently defaults to INT4S
-    # # see https://github.com/njtierney/geotargets/pull/137
-    # datatype = "INT2U"
+    ),
+    # Unsigned integer
+    datatype = "INT2U"
   ),
   # Compute residual habitat suitability in paved road zone of influence
   tar_terra_rast(
     name = paved_roads_zoi_residual_suitability,
     command = compute_paved_roads_zoi_residual_suitability(
       paved_road_distance
-      # n_workers = round(parallelly::availableCores()*0.25)
     )
   ),
   # Add study years as target to allow dynamic branching
@@ -148,9 +145,9 @@ list(
       year = study_years,
       n_workers = round(parallelly::availableCores()*0.25)
     ),
-    # # Use once geotargets is updated, currently defaults to INT4S
-    # # see https://github.com/njtierney/geotargets/pull/137
-    # datatype = "INT2U",
+    # Unsigned integer
+    datatype = "INT2U",
+    # Dynamic branching across study years
     pattern = map(study_years)
   ),
   # Compute unpaved road distance across all study years
@@ -165,9 +162,9 @@ list(
       year = study_years,
       n_workers = round(parallelly::availableCores()*0.25)
     ),
-    # # Use once geotargets is updated, currently defaults to INT4S
-    # # see https://github.com/njtierney/geotargets/pull/137
-    # datatype = "INT2U",
+    # Unsigned integer
+    datatype = "INT2U",
+    # Dynamic branching across study years
     pattern = map(study_years)
   ),
   # Compute residual habitat suitability in unpaved road zone of influence

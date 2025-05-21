@@ -109,12 +109,8 @@ compute_paved_road_density <- function(
   # Empty temp folder
   fs::file_delete(fs::dir_ls(temp_folder))
   
-  # # Return road density target (use this when geotargets is updated)
-  # return(output_raster)
-  
-  # Cast to integer as the tar_terra_rast "datatype" arg is in dev
-  # see https://github.com/njtierney/geotargets/pull/137
-  return(terra::as.int(output_raster))
+  # Return road density target
+  return(output_raster)
 }
 
 
@@ -238,10 +234,6 @@ compute_unpaved_road_density <- function(
   # Empty temp folder
   fs::file_delete(fs::dir_ls(temp_folder))
   
-  # # Return road density target (use this when geotargets is updated)
-  # return(output_raster)
-  
-  # Cast to integer as the tar_terra_rast "datatype" arg is in dev
-  # see https://github.com/njtierney/geotargets/pull/137
-  return(terra::as.int(output_raster))
+  # Return road density target
+  return(output_raster)
 }
