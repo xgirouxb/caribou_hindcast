@@ -30,6 +30,11 @@ tar_source()
 
 # Target list
 list(
+  
+  # -------------------------------------------------------------------------- #
+  # Importing data required for pipeline
+  # -------------------------------------------------------------------------- #
+  
   # Define study area
   tar_target(
     name = study_area,
@@ -60,6 +65,11 @@ list(
     name = mnr_roads,
     command = get_ontario_mnr_roads(study_area)
   ),
+  
+  # -------------------------------------------------------------------------- #
+  # Preprocessing road data prior to analysis
+  # -------------------------------------------------------------------------- #
+  
   # Preprocess Québec roads
   tar_target(
     name = quebec_roads,
@@ -97,6 +107,11 @@ list(
       canlad_road_construction_years
     )
   ),
+  
+  # -------------------------------------------------------------------------- #
+  # Computing road habitat layers 
+  # -------------------------------------------------------------------------- #
+  
   # Compute paved road density
   tar_terra_rast(
     name = paved_road_density,
