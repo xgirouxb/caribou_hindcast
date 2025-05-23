@@ -192,5 +192,35 @@ list(
     datatype = "FLT4S",
     # Map across each layer produced by dynamic branching
     pattern = map(unpaved_road_distance)
+  ),
+  
+  # -------------------------------------------------------------------------- #
+  # Export pipeline output layers required for HSM inputs
+  # -------------------------------------------------------------------------- #
+  
+  # Export residual habitat suitability in paved road zone of influence
+  tar_target(
+    name = output_paved_road_zoi_residual_suitability,
+    command = export_geotiffs(
+      layer = paved_roads_zoi_residual_suitability,
+      output_dir = "outputs/paved_roads_zoi_residual_suitability/",
+      gdal_datatype = "FLT4S"
+    ),
+    # Track output file path as target
+    format = "file"
+  ),
+  # Export residual habitat suitability in unpaved road zone of influence
+  tar_target(
+    name = output_unpaved_road_zoi_residual_suitability,
+    command = export_geotiffs(
+      layer = unpaved_roads_zoi_residual_suitability,
+      output_dir = "outputs/unpaved_roads_zoi_residual_suitability/",
+      append_layer_name = TRUE,
+      gdal_datatype = "FLT4S"
+    ),
+    # Map across each layer produced by dynamic branching
+    pattern = map(unpaved_roads_zoi_residual_suitability),
+    # Track output file path as target
+    format = "file"
   )
 )
