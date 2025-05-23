@@ -188,6 +188,8 @@ list(
     command = compute_unpaved_roads_zoi_residual_suitability(
       unpaved_road_distance
     ),
+    # Signed float
+    datatype = "FLT4S",
     # Map across each layer produced by dynamic branching
     pattern = map(unpaved_road_distance)
   )
