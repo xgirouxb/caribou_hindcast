@@ -203,7 +203,10 @@ list(
     name = output_paved_road_zoi_residual_suitability,
     command = export_geotiffs(
       layer = paved_roads_zoi_residual_suitability,
-      output_dir = "outputs/paved_roads_zoi_residual_suitability/",
+      output_filename = fs::path(
+        "outputs/paved_roads_zoi_residual_suitability/",
+        "paved_roads_zoi_residual_suitability.tif"
+      ),
       gdal_datatype = "FLT4S"
     ),
     # Track output file path as target
@@ -214,7 +217,11 @@ list(
     name = output_unpaved_road_zoi_residual_suitability,
     command = export_geotiffs(
       layer = unpaved_roads_zoi_residual_suitability,
-      output_dir = "outputs/unpaved_roads_zoi_residual_suitability/",
+      output_filename = fs::path(
+        "outputs/unpaved_roads_zoi_residual_suitability/",
+        "unpaved_roads_zoi_residual_suitability.tif"
+      ),
+      # Append layer name (year) to each exported geotiff
       append_layer_name = TRUE,
       gdal_datatype = "FLT4S"
     ),
