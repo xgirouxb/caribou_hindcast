@@ -229,5 +229,37 @@ list(
     pattern = map(unpaved_roads_zoi_residual_suitability),
     # Track output file path as target
     format = "file"
+  ),
+  # Export paved road density
+  tar_target(
+    name = output_paved_road_density,
+    command = export_geotiffs(
+      # Divide density by 1000 for output in km/km2
+      layer = paved_road_density/1000,
+      output_filename = fs::path(
+        "outputs/paved_road_density/", "paved_road_density.tif"
+      ),
+      gdal_datatype = "FLT4S"
+    ),
+    # Track output file path as target
+    format = "file"
+  ),
+  # Export unpaved road density
+  tar_target(
+    name = output_unpaved_road_density,
+    command = export_geotiffs(
+      # Divide density by 1000 for output in km/km2
+      layer = unpaved_road_density/1000,
+      output_filename = fs::path(
+        "outputs/unpaved_road_density/", "unpaved_road_density.tif"
+      ),
+      # Append layer name (year) to each exported geotiff
+      append_layer_name = TRUE,
+      gdal_datatype = "FLT4S"
+    ),
+    # Map across each layer produced by dynamic branching
+    pattern = map(unpaved_road_density),
+    # Track output file path as target
+    format = "file"
   )
 )
